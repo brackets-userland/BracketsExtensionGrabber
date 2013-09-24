@@ -1,8 +1,11 @@
 {
   "name": "BracketsExtensionGrabber",
+  "description": "Downloads all Brackets extensions to a local folder for inspection",
   "dependencies": {
     "request": "~2.27.0",
     "decompress-zip": "0.0.1",
-    "jsdom": "~0.8.5"
+    "rimraf": "~2.2.2",
+    "lodash": "~2.1.0",
+    "async": "~0.2.9"
   }
 }
