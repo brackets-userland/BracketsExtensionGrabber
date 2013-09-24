@@ -1,0 +1,8 @@
+{
+  "name": "BracketsExtensionGrabber",
+  "dependencies": {
+    "request": "~2.27.0",
+    "decompress-zip": "0.0.1",
+    "jsdom": "~0.8.5"
+  }
+}
