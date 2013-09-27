@@ -6,6 +6,7 @@
     "decompress-zip": "0.0.1",
     "rimraf": "~2.2.2",
     "lodash": "~2.1.0",
-    "async": "~0.2.9"
+    "async": "~0.2.9",
+    "http-get": "~0.5.10"
   }
 }
