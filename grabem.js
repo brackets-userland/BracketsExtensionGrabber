@@ -40,11 +40,12 @@ function doExpansion(source, destination, complete) {
     unzipper.on("error", function (err) {
         console.error("Problem unpacking", source);
         console.error(err);
+        complete();
     });
     
     unzipper.on("extract", function () {
         console.log("Extraction complete");
-        complete(null);
+        complete();
     });
     unzipper.extract({
         path: destination
@@ -60,7 +61,7 @@ function deleteOldAndExpand(name, version, complete) {
         rimraf(destination, function (err) {
             if (err) {
                 console.error("Problem erasing ", destination);
-                complete(err);
+                complete();
                 return;
             }
             doExpansion(source, destination, complete);
@@ -80,7 +81,7 @@ function downloadAndExpand(name, version, complete) {
         if (err) {
             console.log("Error downloading", url);
             console.error(err);
-            complete(err);
+            complete();
             return;
         }
         deleteOldAndExpand(name, version, complete);
@@ -121,10 +122,11 @@ http.get({
     }
     
     Object.keys(registry).forEach(function (name) {
-        if (!lastRegistry[name] || lastRegistry[name].metadata.version !== registry[name].metadata.version) {
-            var version = registry[name].metadata.version,
-                zipfile = getZipPath(name, version);
-            if (fs.existsSync(zipfile)) {
+        var version = registry[name].metadata.version,
+            zipfile = getZipPath(name, version),
+            zipExists = fs.existsSync(zipfile);
+        if (!lastRegistry[name] || lastRegistry[name].metadata.version !== version || !zipExists) {
+            if (zipExists) {
                 tasks.push(_.partial(deleteOldAndExpand, name, version));
             } else {
                 tasks.push(_.partial(downloadAndExpand, name, version));
@@ -134,7 +136,7 @@ http.get({
     
     console.log(tasks.length, "packages to update");
     
-    async.parallelLimit(tasks, 5, function () {
+    async.series(tasks, function () {
         saveRegistry(registry, function () {
             console.log("Update complete");
         });
