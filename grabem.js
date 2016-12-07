@@ -1,8 +1,10 @@
 /*jslint node: true, nomen: true */
+/*eslint-env node*/
+/*eslint no-console: 0 */
 
 "use strict";
 
-var http          = require("http-get"),
+var request       = require("request"),
     DecompressZip = require("decompress-zip"),
     fs            = require("fs"),
     path          = require("path"),
@@ -77,15 +79,17 @@ function downloadAndExpand(name, version, complete) {
     
     console.log("Downloading", url);
     
-    http.get(url, destination, function (err) {
-        if (err) {
+    request.get(url)
+        .on("error", function (err) {
             console.log("Error downloading", url);
             console.error(err);
             complete();
             return;
-        }
-        deleteOldAndExpand(name, version, complete);
-    });
+        })
+        .pipe(fs.createWriteStream(destination))
+        .on("finish", function () {
+            deleteOldAndExpand(name, version, complete);
+        });
 }
 
 function saveRegistry(registry, complete) {
@@ -93,34 +97,24 @@ function saveRegistry(registry, complete) {
     fs.writeFile(REGISTRY, JSON.stringify(registry), complete);
 }
 
-http.get({
+request.get({
     url: REGISTRY_URL,
-    bufferType: "buffer"
-}, function (err, result) {
+    gzip: true,
+    json: true
+}, function (err, response, registry) {
     if (err) {
         console.log("Error downloading registry");
         console.error(err);
         return;
     }
     
-    var body = result.buffer.toString("utf8"),
-        registry,
-        tasks = [];
+    var tasks = [];
     
-    if (result.code !== 200) {
-        console.log("Unexpected response", result.code);
-        console.log(body);
+    if (response.statusCode !== 200) {
+        console.log("Unexpected response", response.statusCode);
+        console.log(registry);
         return;
     }
-    
-    try {
-        registry = JSON.parse(body);
-    } catch (e) {
-        console.error("Error parsing registry", e);
-        console.log(body);
-        return;
-    }
-    
     Object.keys(registry).forEach(function (name) {
         var version = registry[name].metadata.version,
             zipfile = getZipPath(name, version),
